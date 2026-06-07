@@ -77,4 +77,15 @@ You will be prompted to:
 
 ---
 
-## 📸 Preview
+## ⚠️ Disclaimer
+
+This tool is built strictly for **educational purposes**.  
+Only run it on machines you **own** or have **explicit permission** to test on.  
+Unauthorized use is illegal and unethical.
+
+---
+
+## 👤 Author
+
+**Rithik**  
+[![GitHub](https://img.shields.io/badge/GitHub-LUCIFERLAMO-black?style=flat&logo=github)](https://github.com/LUCIFERLAMO)
